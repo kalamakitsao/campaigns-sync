@@ -17,6 +17,7 @@ WITH campaign_service AS (
     SELECT
         cs_raw.chp_area_id,
         cs_raw.reported::date AS reported_date,
+        ch.chp_area as chp_name,
         cs_raw.chu_name,
         cs_raw.facility_name,
         ch.county as county_name,
@@ -56,6 +57,7 @@ WITH campaign_service AS (
         cs_raw.reported::date,
         cs_raw.chu_name,
         cs_raw.facility_name,
+        ch.chp_area,
         ch.county,
         ch.sub_county
 ),

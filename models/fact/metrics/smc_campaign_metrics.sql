@@ -3,26 +3,27 @@
 {{
   config(
     materialized='incremental',
-    unique_key='chu_uuid',
     on_schema_change='append_new_columns',
     tags=['smc', 'campaigns']
   )
 }}
 
-WITH cycle_dates AS (
-    SELECT 
-        cycle_name,
-        start_date,
-        end_date
-    FROM {{ ref('smc_cycle_dates') }}
+WITH campaign_cycles AS (
+  SELECT 
+    cycle_name,
+    start_date,
+    "end_date",
+    UNNEST(target_counties) AS target_county
+  FROM {{ ref('smc_cycle_dates') }}
 ),
+
 
 campaigns_with_cycle AS (
     SELECT
         c.*,
         cd.cycle_name
     FROM {{ ref('campaign_service_smc') }} c
-    JOIN cycle_dates cd 
+    JOIN campaign_cycles cd 
         ON c.reported::date BETWEEN cd.start_date::date AND cd.end_date::date
 ),
 
@@ -32,19 +33,20 @@ chp_hierarchy AS (
     ch.county AS county_name,
     ch.sub_county AS sub_county_name,
     ch.community_unit AS chu_name,
-    ch.chp_area_uuid AS chp_area_uuid,
-    ch.chp_area_name AS chp_area_name
+    ch.chp_area_id AS chp_area_id,
+    ch.chp_area AS chp_area_name
   FROM
     {{ ref('mv_location_hierarchy') }} AS ch
-    JOIN campaign_cycles cc ON ch.county_name = cc.target_county
+    JOIN campaign_cycles cc ON ch.county = cc.target_county
 ),
 
 campaigns AS (
     SELECT
-        chp.uuid AS chp_area_id,
+        chp.chp_area_id AS chp_area_id,
         chp.county_name AS county_name,
         chp.sub_county_name AS sub_county_name,
         chp.chu_name AS community_health_unit_name,
+        chp.chp_area_name,
         cwc.cycle_name AS cycle,
         cwc.reported::date AS campaign_date,
         p.uuid,
@@ -65,13 +67,14 @@ campaigns AS (
     FROM campaigns_with_cycle cwc
     JOIN {{ ref('patient_f_client') }} p ON p.uuid = cwc.patient_id
     JOIN {{ ref('household') }} hh ON p.household_id = hh.uuid
-    JOIN chp_hierarchy chp ON hh.chv_area_id = chp.uuid
+    JOIN chp_hierarchy chp ON hh.chv_area_id = chp.chp_area_id
 )
 
 SELECT
     county_name,
     sub_county_name,
     community_health_unit_name,
+    chp_area_name,
     cycle,
     campaign_date,
 
@@ -133,4 +136,5 @@ GROUP BY
     sub_county_name,
     community_health_unit_name,
     cycle,
-    campaign_date
+    campaign_date,
+    chp_area_name
