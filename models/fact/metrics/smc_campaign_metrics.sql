@@ -26,13 +26,25 @@ campaigns_with_cycle AS (
         ON c.reported::date BETWEEN cd.start_date::date AND cd.end_date::date
 ),
 
+-- Get the complete CHP hierarchy for target counties
+chp_hierarchy AS (
+  SELECT
+    ch.county AS county_name,
+    ch.sub_county AS sub_county_name,
+    ch.community_unit AS chu_name,
+    ch.chp_area_uuid AS chp_area_uuid,
+    ch.chp_area_name AS chp_area_name
+  FROM
+    {{ ref('mv_location_hierarchy') }} AS ch
+    JOIN campaign_cycles cc ON ch.county_name = cc.target_county
+),
+
 campaigns AS (
     SELECT
         chp.uuid AS chp_area_id,
         chp.county_name AS county_name,
         chp.sub_county_name AS sub_county_name,
         chp.chu_name AS community_health_unit_name,
-        chp.chu_uuid,
         cwc.cycle_name AS cycle,
         cwc.reported::date AS campaign_date,
         p.uuid,
@@ -53,14 +65,13 @@ campaigns AS (
     FROM campaigns_with_cycle cwc
     JOIN {{ ref('patient_f_client') }} p ON p.uuid = cwc.patient_id
     JOIN {{ ref('household') }} hh ON p.household_id = hh.uuid
-    JOIN {{ ref('chp_hierarchy') }} chp ON hh.chv_area_id = chp.uuid
+    JOIN chp_hierarchy chp ON hh.chv_area_id = chp.uuid
 )
 
 SELECT
     county_name,
     sub_county_name,
     community_health_unit_name,
-    chu_uuid,
     cycle,
     campaign_date,
 
@@ -121,6 +132,5 @@ GROUP BY
     county_name, 
     sub_county_name,
     community_health_unit_name,
-    chu_uuid,
     cycle,
     campaign_date
