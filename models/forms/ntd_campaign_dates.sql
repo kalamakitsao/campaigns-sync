@@ -26,5 +26,3 @@ SELECT
     '2025-06-01'::date as start_date,
     '2025-09-30'::date as end_date,
     ARRAY['Kakamega','Siaya','Bungoma','Transnzoia','Vihiga County'] as target_counties
-
-UNION ALL
