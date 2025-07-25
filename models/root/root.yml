@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: couchdb
+    database: "{{ env_var('POSTGRES_DB') }}"
+    schema: "{{ env_var('POSTGRES_SCHEMA') }}"
+    tables:
+      - name: "{{ env_var('POSTGRES_TABLE') }}"
