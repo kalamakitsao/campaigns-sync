@@ -374,15 +374,15 @@
   NULLIF(couchdb.doc -> 'contact' -> 'parent' -> 'parent' -> 'parent' -> 'parent' ->> '_id', '') AS contact_great_great_grandparent_id
 {% endset %}
 
-{{ cht_form_model('campaign_service_ntd', custom_fields, age_indexes + form_indexes) }}
+-- {{ cht_form_model('campaign_service_ntd', custom_fields, age_indexes + form_indexes) }}
 
---  SELECT
---  {{ custom_fields }}
---FROM {{ ref('data_record') }} data_record
---JOIN {{ ref('couchdb') }} couchdb
---  ON couchdb._id = data_record.uuid
---WHERE data_record.form = 'campaign_service_ntd'
+SELECT
+ {{ custom_fields }}
+FROM {{ ref('data_record') }} data_record
+JOIN {{ ref('couchdb') }} couchdb
+ ON couchdb._id = data_record.uuid
+WHERE data_record.form = 'campaign_service_ntd'
 
---{% if is_incremental() %}
---  AND data_record.saved_timestamp >= (SELECT MAX(saved_timestamp) FROM {{ this }})
--- {% endif %}
+{% if is_incremental() %}
+  AND data_record.saved_timestamp >= (SELECT MAX(saved_timestamp) FROM {{ this }})
+ {% endif %}
