@@ -50,7 +50,7 @@ WITH campaign_service AS (
         COUNT(*) FILTER (WHERE treated_with_albendazole) AS count_total_treated_with_albe,
         COUNT(*) FILTER (WHERE treated_with_praziquantel) AS count_total_with_prazi
     FROM {{ ref('campaign_service_ntd') }} cs_raw
-    JOIN {{ ref('mv_location_hierarchy') }}  ch ON cs_raw.chp_area_id = ch.uuid
+    JOIN {{ ref('mv_location_hierarchy') }}  ch ON cs_raw.chp_area_id = ch.chp_area_id
     GROUP BY
         cs_raw.chp_area_id,
         cs_raw.reported::date,
