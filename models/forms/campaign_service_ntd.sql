@@ -2,6 +2,21 @@
 -- It extracts data from the campaign_service_ntd form
 -- models/forms/campaign_service_ntd.sql
 
+{{
+  config(
+    materialized = 'incremental',
+    unique_key = 'uuid',
+    on_schema_change = 'append_new_columns',
+    indexes = [
+      {'columns': ['uuid'], 'type': 'hash'},
+      {'columns': ['saved_timestamp']},
+      {'columns': ['reported']},
+      {'columns': ['chp_area_id']},
+      {'columns': ['source_id']}
+    ]
+  )
+}}
+
 {%- set age_indexes = patient_age_indexes() -%}
 
 {%- set form_indexes = [
@@ -374,10 +389,8 @@
   NULLIF(couchdb.doc -> 'contact' -> 'parent' -> 'parent' -> 'parent' -> 'parent' ->> '_id', '') AS contact_great_great_grandparent_id
 {% endset %}
 
--- {{ cht_form_model('campaign_service_ntd', custom_fields, age_indexes + form_indexes) }}
-
 SELECT
- {{ custom_fields }}
+  {{ custom_fields }}
 FROM {{ ref('data_record') }} data_record
 JOIN {{ env_var('POSTGRES_SCHEMA') }}.{{ env_var('POSTGRES_TABLE') }} couchdb
   ON couchdb._id = data_record.uuid
@@ -385,4 +398,4 @@ WHERE data_record.form = 'campaign_service_ntd'
 
 {% if is_incremental() %}
   AND data_record.saved_timestamp >= (SELECT MAX(saved_timestamp) FROM {{ this }})
- {% endif %}
+{% endif %}
