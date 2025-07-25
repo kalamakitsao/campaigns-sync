@@ -392,7 +392,7 @@
 SELECT
   {{ custom_fields }}
 FROM {{ ref('data_record') }} data_record
-JOIN {{ env_var('POSTGRES_SCHEMA') }}.{{ env_var('POSTGRES_TABLE') }} couchdb
+JOIN {{ ref('couchdb') }} couchdb
   ON couchdb._id = data_record.uuid
 WHERE data_record.form = 'campaign_service_ntd'
 
