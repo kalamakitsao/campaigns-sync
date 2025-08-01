@@ -20,7 +20,8 @@ SELECT
     'Cycle 1' as cycle_name,
     '2025-06-05'::date as start_date,
     '2025-07-02'::date as end_date,
-    ARRAY['Turkana'] as target_counties
+    ARRAY['Turkana'] as target_counties,
+    ARRAY['turkana Central', 'Turkana Central B'] AS target_sub_counties
 
 UNION ALL
 
@@ -30,7 +31,8 @@ SELECT
     'Cycle 2',
     '2025-07-03'::date,
     '2025-07-15'::date,
-    ARRAY['Turkana']
+    ARRAY['Turkana'],
+    ARRAY['turkana Central', 'Turkana Central B']
 
 UNION ALL
 
@@ -40,7 +42,8 @@ SELECT
     'Cycle 3',
     '2025-07-28'::date,
     '2025-08-15'::date,
-    ARRAY['Turkana']
+    ARRAY['Turkana'],
+    ARRAY['turkana Central', 'Turkana Central B']
 
 UNION ALL
 
@@ -50,7 +53,8 @@ SELECT
     'Cycle 4',
     '2025-08-20'::date,
     '2025-09-15'::date,
-    ARRAY['Turkana'] 
+    ARRAY['Turkana'],
+    ARRAY['turkana Central', 'Turkana Central B']
 
 UNION ALL
 
@@ -60,4 +64,5 @@ SELECT
     'Cycle 5',
     '2025-09-16'::date,
     '2025-10-15'::date,
-    ARRAY['Turkana']
+    ARRAY['Turkana'],
+    ARRAY['turkana Central', 'Turkana Central B']
