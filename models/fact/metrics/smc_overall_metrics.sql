@@ -1,7 +1,7 @@
 {{ config(
     materialized = 'table',
     tags = ['smc', 'campaign', 'summary'],
-    description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts'
+    description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts',
     indexes = [
         {'columns': ['county_name']},
         {'columns': ['sub_county_name']},
