@@ -3,13 +3,6 @@
     unique_key = ['chp_area_name', 'campaign_date', 'cycle'],
     on_schema_change = 'append_new_columns',
     tags = ['smc', 'campaigns']
-    indexes = [
-        {'columns': ['county_name']},
-        {'columns': ['sub_county_name']},
-        {'columns': ['community_health_unit_name']},
-        {'columns': ['chp_area_name']},
-        {'columns': ['cycle']}
-    ]
 ) }}
 
 WITH campaign_cycles AS (
