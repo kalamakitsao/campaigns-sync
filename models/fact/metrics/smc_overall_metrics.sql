@@ -1,8 +1,12 @@
 {{ config(
     materialized = 'table',
     tags = ['smc', 'campaign', 'summary'],
-    description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts',
-    schema = 'campaigns'
+    description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts'
+    post_hook=[
+        "CREATE INDEX IF NOT EXISTS idx_smc_summary_subcounty ON {{ this }} (sub_county_name)",
+        "CREATE INDEX IF NOT EXISTS idx_smc_summary_chu ON {{ this }} (community_health_unit_name)",
+        "CREATE INDEX IF NOT EXISTS idx_smc_summary_subcounty_chu_cycle ON {{ this }} (sub_county_name, community_health_unit_name)"
+    ]
 ) }}
 
 WITH latest_year AS (

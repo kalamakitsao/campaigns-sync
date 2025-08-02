@@ -1,7 +1,7 @@
 {{ config(
     materialized = 'table',
     tags = ['smc', 'campaign', 'summary'],
-    description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts',
+    description = 'SMC campaign summary by cycle with target, reached, treated, and new children',
     schema = 'campaigns'
 ) }}
 
@@ -59,31 +59,55 @@ campaigns_joined AS (
     AND chp.county = ANY(cd.target_counties)
 ),
 
-campaigns_summary AS (
+first_treatment_cycle AS (
   SELECT
-    county_name,
-    sub_county_name,
-    cycle_name,
-    community_health_unit_name,
-    COUNT(DISTINCT patient_id) AS children_reached,
-    COUNT(DISTINCT patient_id) FILTER (WHERE smc_treatment_given = 'yes') AS children_treated
+    patient_id,
+    MIN(cycle_name) AS first_cycle
   FROM campaigns_joined
-  GROUP BY county_name, sub_county_name, community_health_unit_name, cycle_name
-)
+  WHERE smc_treatment_given = 'yes'
+  GROUP BY patient_id
+),
 
+new_in_campaign AS (
+  SELECT
+    cj.county_name,
+    cj.sub_county_name,
+    cj.community_health_unit_name,
+    cj.cycle_name,
+    COUNT(DISTINCT cj.patient_id) AS new_in_campaign
+  FROM campaigns_joined cj
+  JOIN first_treatment_cycle ftc
+    ON cj.patient_id = ftc.patient_id
+    AND cj.cycle_name = ftc.first_cycle
+  GROUP BY cj.county_name, cj.sub_county_name, cj.community_health_unit_name, cj.cycle_name
+)
 
 SELECT
   t.county_name,
   t.sub_county_name,
   t.community_health_unit_name,
-  s.cycle_name,
   t.target_children,
-  s.children_reached,
-  s.children_treated,
+  cj.cycle_name AS cycle,
+  COUNT(DISTINCT cj.patient_id) AS children_reached,
+  COUNT(DISTINCT cj.patient_id) FILTER (WHERE cj.smc_treatment_given = 'yes') AS children_treated,
+  COALESCE(nc.new_in_campaign, 0) AS new_in_campaign
 FROM campaign_targets t
-LEFT JOIN campaigns_summary s
-  ON t.sub_county_name = s.sub_county_name
-  AND t.community_health_unit_name = s.community_health_unit_name
-LEFT JOIN cycle_distribution d
-  ON t.sub_county_name = d.sub_county_name
-  AND t.community_health_unit_name = d.community_health_unit_name
+JOIN campaigns_joined cj
+  ON t.sub_county_name = cj.sub_county_name
+  AND t.community_health_unit_name = cj.community_health_unit_name
+LEFT JOIN new_in_campaign nc
+  ON cj.sub_county_name = nc.sub_county_name
+  AND cj.community_health_unit_name = nc.community_health_unit_name
+  AND cj.cycle_name = nc.cycle_name
+GROUP BY 
+  t.county_name,
+  t.sub_county_name,
+  t.community_health_unit_name,
+  t.target_children,
+  cj.cycle_name,
+  nc.new_in_campaign
+ORDER BY 
+  t.county_name,
+  t.sub_county_name,
+  t.community_health_unit_name,
+  cj.cycle_name
