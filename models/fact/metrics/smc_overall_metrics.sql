@@ -2,10 +2,11 @@
     materialized = 'table',
     tags = ['smc', 'campaign', 'summary'],
     description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts'
-    post_hook=[
-        "CREATE INDEX IF NOT EXISTS idx_smc_summary_subcounty ON {{ this }} (sub_county_name)",
-        "CREATE INDEX IF NOT EXISTS idx_smc_summary_chu ON {{ this }} (community_health_unit_name)",
-        "CREATE INDEX IF NOT EXISTS idx_smc_summary_subcounty_chu_cycle ON {{ this }} (sub_county_name, community_health_unit_name)"
+    indexes = [
+        {'columns': ['county_name']},
+        {'columns': ['sub_county_name']},
+        {'columns': ['community_health_unit_name']},
+        {'columns': ['county_name', 'sub_county_name', 'community_health_unit_name']}
     ]
 ) }}
 
