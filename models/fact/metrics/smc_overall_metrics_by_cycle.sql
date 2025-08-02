@@ -1,8 +1,7 @@
 {{ config(
     materialized = 'table',
     tags = ['smc', 'campaign', 'summary'],
-    description = 'SMC campaign summary by cycle with target, reached, treated, and new children',
-    schema = 'campaigns'
+    description = 'SMC campaign summary by cycle with target, reached, treated, and new children'
 ) }}
 
 WITH latest_year AS (

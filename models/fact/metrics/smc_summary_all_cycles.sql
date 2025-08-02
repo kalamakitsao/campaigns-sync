@@ -1,13 +1,13 @@
 {{ config(
-    materialized = 'incremental',
-    unique_key = ['county_name', 'sub_county_name', 'community_health_unit_name', 'cycle'],
-    on_schema_change = 'append_new_columns',
-    tags = ['smc', 'campaigns', 'summary'],
+    materialized = 'table',
+    tags = ['smc', 'campaign', 'targets'],
+    description = 'SMC target and treatment summary by CHU and cycle in Turkana Central',
     indexes = [
         {'columns': ['county_name']},
         {'columns': ['sub_county_name']},
         {'columns': ['community_health_unit_name']},
-        {'columns': ['cycle']}
+        {'columns': ['cycle']},
+        {'columns': ['county_name', 'sub_county_name', 'community_health_unit_name', 'cycle']}
     ]
 ) }}
 
@@ -32,6 +32,8 @@ campaign_targets AS (
   JOIN {{ ref('patient_f_client') }} children
     ON hholds.uuid = children.household_id
   CROSS JOIN first_cycle_start fc
+  WHERE LOWER(chp.county) = 'turkana'
+    AND LOWER(chp.sub_county) LIKE '%central%'
   GROUP BY chp.county, chp.sub_county, chp.community_unit
 ),
 
@@ -40,8 +42,7 @@ campaign_cycles AS (
     scd.cycle_name AS cycle,
     scd.start_date,
     scd.end_date,
-    UNNEST(scd.target_counties) AS target_county,
-    UNNEST(scd.target_sub_counties) AS target_sub_county
+    UNNEST(scd.target_counties) AS target_county
   FROM {{ ref('smc_cycle_dates') }} scd
 ),
 
@@ -61,9 +62,8 @@ chp_hierarchy AS (
     ch.community_unit AS community_health_unit_name,
     ch.chp_area_id
   FROM {{ ref('mv_location_hierarchy') }} ch
-  JOIN campaign_cycles cc
-    ON ch.county = cc.target_county
-   AND ch.sub_county = cc.target_sub_county
+  WHERE LOWER(ch.county) = 'turkana'
+    AND LOWER(ch.sub_county) LIKE '%central%'
 ),
 
 campaigns AS (
@@ -106,4 +106,4 @@ ORDER BY
   t.county_name,
   t.sub_county_name,
   t.community_health_unit_name,
-  c.cycle;
+  c.cycle
