@@ -1,5 +1,3 @@
--- models/campaigns/campaign_summary_smc.sql
-
 {{ config(
     materialized = 'incremental',
     unique_key = ['chp_area_id', 'cycle'],
@@ -49,10 +47,15 @@ target_counties AS (
 campaigns_with_cycle AS (
   SELECT
     c.*,
-    cd.cycle_name
+    cd.cycle_name,
+    cd.start_date AS cycle_start_date
   FROM {{ ref('campaign_service_smc') }} c
   JOIN campaign_cycles cd 
     ON c.reported::date BETWEEN cd.start_date AND cd.end_date
+
+  {% if is_incremental() %}
+    WHERE c.saved_timestamp >= (SELECT MAX(saved_timestamp) FROM {{ this }})
+  {% endif %}
 ),
 
 chp_hierarchy AS (
