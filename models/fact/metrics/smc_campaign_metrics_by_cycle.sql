@@ -60,7 +60,7 @@ campaigns AS (
     cwc.spaq_allergy,
     cwc.taken_al,
     cwc.cotrimazole,
-    COALESCE(cwc.calc_pink_spaq, 0)::int  AS pink_spaq,
+    COALESCE(cwc.calc_pink_spaq::int, 0)::int  AS pink_spaq,
     COALESCE(cwc.calc_green_spaq, 0)::int AS green_spaq
   FROM campaigns_with_cycle cwc
   JOIN {{ ref('patient_f_client') }} p ON p.uuid = cwc.patient_id
