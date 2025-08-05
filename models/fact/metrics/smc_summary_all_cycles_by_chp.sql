@@ -1,5 +1,5 @@
 {{ config(
-    materialized = 'incremental',
+    materialized = 'table',
     unique_key = ['chp_area_id', 'cycle'],
     on_schema_change = 'append_new_columns',
     tags = ['smc', 'campaigns']
@@ -53,9 +53,9 @@ campaigns_with_cycle AS (
   JOIN campaign_cycles cd 
     ON c.reported::date BETWEEN cd.start_date AND cd.end_date
 
-  {% if is_incremental() %}
-    WHERE c.saved_timestamp >= (SELECT MAX(saved_timestamp) FROM {{ this }})
-  {% endif %}
+ -- {% if is_incremental() %}
+ --   WHERE c.saved_timestamp >= (SELECT MAX(saved_timestamp) FROM {{ this }})
+ -- {% endif %}
 ),
 
 chp_hierarchy AS (
@@ -116,4 +116,4 @@ GROUP BY
 ORDER BY
   c.county_name,
   c.sub_county_name,
-  c.community_health_unit_name;
+  c.community_health_unit_name
