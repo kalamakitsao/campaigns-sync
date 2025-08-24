@@ -7,8 +7,7 @@
     on_schema_change = 'append_new_columns',
     tags = ['ntd', 'campaigns'],
     indexes = [
-      {'columns': ['chp_area_uuid']},
-      {'columns': ['chp_area_code'], 'where': ''}  -- keep if your targets have this column
+      {'columns': ['chp_area_uuid']}
     ]
 ) }}
 
@@ -49,7 +48,7 @@ WITH campaign_reach AS (
     SUM(count_total_treated_with_albe)                            AS count_total_treated_with_albe,
     SUM(count_total_with_prazi)                                   AS count_total_with_prazi
   FROM {{ ref('ntd_campaign_metrics') }}
-  GROUP BY 1
+  GROUP BY 1,2
 )
 
 SELECT
