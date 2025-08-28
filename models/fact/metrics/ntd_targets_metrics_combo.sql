@@ -84,4 +84,4 @@ SELECT
 
 FROM {{ ref('ntd_campaign_targets') }} nt
 LEFT JOIN campaign_reach cr
-  ON nt.chp_area_uuid = cr.chp_area_id and nt.cycle_name = cr.cycle_name;
+  ON nt.chp_area_id = cr.chp_area_id and nt.cycle_name = cr.cycle_name;
