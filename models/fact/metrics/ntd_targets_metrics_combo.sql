@@ -3,11 +3,11 @@
 
 {{ config(
     materialized = 'table',
-    unique_key = ['chp_area_uuid'],
+    unique_key = ['chp_area_id'],
     on_schema_change = 'append_new_columns',
     tags = ['ntd', 'campaigns'],
     indexes = [
-      {'columns': ['chp_area_uuid']}
+      {'columns': ['chp_area_id']}
     ]
 ) }}
 
@@ -84,4 +84,4 @@ SELECT
 
 FROM {{ ref('ntd_campaign_targets') }} nt
 LEFT JOIN campaign_reach cr
-  ON nt.chp_area_id = cr.chp_area_id and nt.cycle_name = cr.cycle_name;
+  ON nt.chp_area_id = cr.chp_area_id and nt.cycle_name = cr.cycle_name

@@ -1,6 +1,6 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['chp_area_name', 'campaign_date', 'cycle'],
+    unique_key = ['chp_area_id', 'campaign_date', 'cycle'],
     on_schema_change = 'append_new_columns',
     tags = ['smc', 'campaigns']
 ) }}
@@ -73,6 +73,7 @@ SELECT
   sub_county_name,
   community_health_unit_name,
   chp_area_name,
+  chp_area_id
   cycle,
   COUNT(DISTINCT reported_by) AS chps_reporting,
   COUNT(uuid) AS campaign_forms_submitted,
@@ -131,4 +132,5 @@ GROUP BY
   sub_county_name,
   community_health_unit_name,
   cycle,
-  chp_area_name
+  chp_area_name,
+  chp_area_id
