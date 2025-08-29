@@ -73,7 +73,7 @@ SELECT
   sub_county_name,
   community_health_unit_name,
   chp_area_name,
-  chp_area_id
+  chp_area_id,
   cycle,
   COUNT(DISTINCT reported_by) AS chps_reporting,
   COUNT(uuid) AS campaign_forms_submitted,
