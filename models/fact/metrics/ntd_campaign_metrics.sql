@@ -93,7 +93,7 @@ SELECT
     count_total_1years_to_4years_female_treated_with_albe,
     count_total_1years_to_4years_male_treated_with_albe,
     count_total_5years_to_15years_female_treated_with_albe,
-    count_total_5years_to_15years_male_treated_with_albe
+    count_total_5years_to_15years_male_treated_with_albe,
     count_total_15_plus_years_female_treated_with_albe,
     count_total_15_plus_years_male_treated_with_albe,
     -- Praziquantel treatment counts
