@@ -27,6 +27,7 @@ ppn_with_age AS (
     JOIN {{ ref('household') }} hh ON p.household_id = hh.uuid
     JOIN {{ ref('mv_location_hierarchy') }} mv ON hh.chv_area_id = mv.chp_area_id
     JOIN campaign_cycles cc ON mv.county = cc.target_county
+    WHERE p.reported::date < cc.start_date::date 
 ),
 
 aggregated AS (
