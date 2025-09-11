@@ -40,7 +40,7 @@ SELECT
     'SMC',
     '2025',
     'Cycle 3',
-    '2025-07-28'::date,
+    '2025-07-31'::date,
     '2025-08-15'::date,
     ARRAY['Turkana'],
     ARRAY['turkana Central', 'Turkana Central B']
@@ -51,7 +51,7 @@ SELECT
     'SMC',
     '2025',
     'Cycle 4',
-    '2025-08-20'::date,
+    '2025-08-28'::date,
     '2025-09-15'::date,
     ARRAY['Turkana'],
     ARRAY['turkana Central', 'Turkana Central B']
@@ -62,7 +62,7 @@ SELECT
     'SMC',
     '2025',
     'Cycle 5',
-    '2025-09-16'::date,
+    '2025-09-25'::date,
     '2025-10-15'::date,
     ARRAY['Turkana'],
     ARRAY['turkana Central', 'Turkana Central B']
