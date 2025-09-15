@@ -13,7 +13,7 @@
 
 WITH campaign_reach AS (
   SELECT
-    chp_area_id,cycle_name,
+    chp_area_id --,cycle_name,
 
     -- Tablet counts
     SUM(count_praziquantel_tablets_given)                         AS count_praziquantel_tablets_given,
@@ -49,7 +49,7 @@ WITH campaign_reach AS (
     SUM(count_total_treated_with_albe)                            AS count_total_treated_with_albe,
     SUM(count_total_with_prazi)                                   AS count_total_with_prazi
   FROM {{ ref('ntd_campaign_metrics') }}
-  GROUP BY 1,2
+  GROUP BY 1
 )
 
 SELECT
@@ -86,4 +86,4 @@ SELECT
 
 FROM {{ ref('ntd_campaign_targets') }} nt
 LEFT JOIN campaign_reach cr
-  ON nt.chp_area_id = cr.chp_area_id and nt.cycle_name = cr.cycle_name
+  ON nt.chp_area_id = cr.chp_area_id --and nt.cycle_name = cr.cycle_name
