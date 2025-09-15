@@ -5,8 +5,7 @@
       {'columns': ['reported_by_parent']},
       {'columns': ['county']},
       {'columns': ['sub_county']},
-      {'columns': ['cycle_name']},
-      {'columns': ['reported_date']}
+      {'columns': ['cycle_name']}
     ]
 ) }}
 
@@ -18,8 +17,8 @@ WITH campaign_counties AS (
     UNNEST(d.target_counties) AS target_county
   FROM {{ ref('ntd_campaign_dates') }} d
   {% if var('ntd_cycle', none) %}
-    WHERE d.cycle_name = {{ var('ntd_cycle') | tojson }}
-  {% endif %}
+     WHERE d.cycle_name = {{ var('ntd_cycle') | tojson }}
+   {% endif %}
 ),
 
 commodity_base AS (
