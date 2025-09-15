@@ -15,10 +15,10 @@ WITH campaign_counties AS (
     d.end_date,
     UNNEST(d.target_counties) AS target_county
   FROM {{ ref('ntd_campaign_dates') }} d
-  {# Optional cycle filter: pass with --vars 'ntd_cycle: 2025_01' #}
-  {% if var('ntd_cycle', none) %}
-    WHERE d.cycle_name = {{ var('ntd_cycle') | tojson }}
-  {% endif %}
+  --{# Optional cycle filter: pass with --vars 'ntd_cycle: 2025_01' #}
+  -- {% if var('ntd_cycle', none) %}
+    --WHERE d.cycle_name = {{ var('ntd_cycle') | tojson }}
+  -- {% endif %}
 ),
 
 commodity_base AS (
