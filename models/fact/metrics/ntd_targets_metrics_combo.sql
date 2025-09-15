@@ -13,7 +13,7 @@
 
 WITH campaign_reach AS (
   SELECT
-    chp_area_id --,cycle_name,
+    chp_area_id, -- cycle_name,
 
     -- Tablet counts
     SUM(count_praziquantel_tablets_given)                         AS count_praziquantel_tablets_given,
@@ -49,7 +49,7 @@ WITH campaign_reach AS (
     SUM(count_total_treated_with_albe)                            AS count_total_treated_with_albe,
     SUM(count_total_with_prazi)                                   AS count_total_with_prazi
   FROM {{ ref('ntd_campaign_metrics') }}
-  where cycle)_name = '2025_01'  -- Temporary hardcode filter to match targets table
+  where cycle_name = '2025_01'  -- Temporary hardcode filter to match targets table
   GROUP BY 1
 )
 
