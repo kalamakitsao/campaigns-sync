@@ -1,36 +1,31 @@
 {{ config(
     materialized = 'table',
-    unique_key = ['chp_area_id', 'cycle_name'],
+    unique_key = ['chp_area_id'],
     tags = ['ntd', 'population']
 ) }}
 
 WITH campaign_cycles AS (
-    SELECT *, 
-        coalesce(cc.alt_target_date, cc.start_date) as target_date
-    FROM (SELECT 
-            cycle_name,
-            start_date,
-            '2025-09-12'::date as alt_target_date, 
-            UNNEST(target_counties) AS target_county
-          FROM {{ ref('ntd_campaign_dates') }}) a
+    SELECT 
+        cycle_name,
+        start_date,
+        UNNEST(target_counties) AS target_county
+    FROM {{ ref('ntd_campaign_dates') }}
 ),
 
 ppn_with_age AS (
     SELECT
         mv.chp_area_id,
-        cc.cycle_name,
         p.*,
         (
-            DATE_PART('year', cc.target_date) - DATE_PART('year', p.date_of_birth)
+            DATE_PART('year', now()) - DATE_PART('year', p.date_of_birth)
         ) * 12 +
         (
-            DATE_PART('month', cc.target_date) - DATE_PART('month', p.date_of_birth)
+            DATE_PART('month', now()) - DATE_PART('month', p.date_of_birth)
         ) AS age_in_months_at_campaign
     FROM {{ ref('patient_f_client') }} p
     JOIN {{ ref('household') }} hh ON p.household_id = hh.uuid
     JOIN {{ ref('mv_location_hierarchy') }} mv ON hh.chv_area_id = mv.chp_area_id
     JOIN campaign_cycles cc ON mv.county = cc.target_county
-    WHERE p.reported::date < cc.target_date::date 
 ),
 
 aggregated AS (
@@ -40,7 +35,6 @@ aggregated AS (
         chps.community_unit as chu_name,
         chps.chp_area_id,
         chps.chp_area as chp_area_name,
-        pwa.cycle_name,
         
         COUNT(pwa.uuid) AS count_total_population,
         COUNT(pwa.uuid) FILTER (WHERE pwa.sex = 'male') AS count_total_population_male,
@@ -83,8 +77,7 @@ aggregated AS (
         chps.sub_county,
         chps.community_unit,
         chps.chp_area_id,
-        chps.chp_area,
-        pwa.cycle_name
+        chps.chp_area
 )
 
 SELECT * FROM aggregated

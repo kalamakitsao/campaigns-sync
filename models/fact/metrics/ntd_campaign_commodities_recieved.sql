@@ -17,7 +17,7 @@ WITH campaign_counties AS (
   FROM {{ ref('ntd_campaign_dates') }} d
   {# Optional cycle filter: pass with --vars 'ntd_cycle: 2025_01' #}
   {% if var('ntd_cycle', none) %}
-    WHERE d.cycle_name = {{ var('ntd_cycle') | as_text }}
+    WHERE d.cycle_name = {{ var('ntd_cycle') | tojson }}
   {% endif %}
 ),
 
@@ -43,9 +43,9 @@ SELECT
   sub_county,
   community_unit,
   reported_by_parent,
-  SUM(rs_mebendazole)  AS rs_mebendazole,
-  SUM(rs_albendazole)  AS rs_albendazole,
-  SUM(rs_praziquantel) AS rs_praziquantel
+  SUM(COALESCE(rs_mebendazole, 0))  AS rs_mebendazole,
+  SUM(COALESCE(rs_albendazole, 0))  AS rs_albendazole,
+  SUM(COALESCE(rs_praziquantel, 0)) AS rs_praziquantel
 FROM commodity_base
 GROUP BY
   county,
@@ -53,6 +53,7 @@ GROUP BY
   community_unit,
   reported_by_parent
 HAVING
-    SUM(rs_mebendazole)  > 0
- OR SUM(rs_albendazole)  > 0
- OR SUM(rs_praziquantel) > 0;
+    SUM(COALESCE(rs_mebendazole, 0))  > 0
+ OR SUM(COALESCE(rs_albendazole, 0))  > 0
+ OR SUM(COALESCE(rs_praziquantel, 0)) > 0
+;
