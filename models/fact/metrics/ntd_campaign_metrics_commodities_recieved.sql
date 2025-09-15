@@ -1,11 +1,12 @@
+-- models/campaigns/ntd_commodities_by_cycle.sql
 {{ config(
     materialized = 'table',
     tags = ['ntd', 'commodities', 'campaigns'],
     indexes = [
-      {'columns': ['reported_by_parent']},
+      {'columns': ['cycle_name']},
+      {'columns': ['chp_area_id']},
       {'columns': ['county']},
-      {'columns': ['sub_county']},
-      {'columns': ['cycle_name']}
+      {'columns': ['sub_county']}
     ]
 ) }}
 
@@ -17,8 +18,8 @@ WITH campaign_counties AS (
     UNNEST(d.target_counties) AS target_county
   FROM {{ ref('ntd_campaign_dates') }} d
   {% if var('ntd_cycle', none) %}
-     WHERE d.cycle_name = {{ var('ntd_cycle') | tojson }}
-   {% endif %}
+    WHERE d.cycle_name = {{ var('ntd_cycle') | tojson }}
+  {% endif %}
 ),
 
 commodity_base AS (
@@ -27,8 +28,8 @@ commodity_base AS (
     mv.county,
     mv.sub_county,
     mv.community_unit,
-    nc.reported_by_parent,
-    nc.reported::date AS reported_date,
+    nc.reported_by_parent AS chp_area_id,
+    nc.reported::date     AS reported_date,
     nc.rs_mebendazole,
     nc.rs_albendazole,
     nc.rs_praziquantel
@@ -45,20 +46,14 @@ SELECT
   county,
   sub_county,
   community_unit,
-  reported_by_parent,
-  -- reported_date is used only to map to cycle; exclude from grouping unless you want daily rows
-  SUM(COALESCE(rs_mebendazole, 0))  AS rs_mebendazole,
-  SUM(COALESCE(rs_albendazole, 0))  AS rs_albendazole,
-  SUM(COALESCE(rs_praziquantel, 0)) AS rs_praziquantel
+  chp_area_id,
+  SUM(COALESCE(rs_mebendazole,  0))::bigint AS rs_mebendazole,
+  SUM(COALESCE(rs_albendazole,  0))::bigint AS rs_albendazole,
+  SUM(COALESCE(rs_praziquantel, 0))::bigint AS rs_praziquantel
 FROM commodity_base
 GROUP BY
   cycle_name,
   county,
   sub_county,
   community_unit,
-  reported_by_parent
-HAVING
-    SUM(COALESCE(rs_mebendazole, 0))  > 0
- OR SUM(COALESCE(rs_albendazole, 0))  > 0
- OR SUM(COALESCE(rs_praziquantel, 0)) > 0
-;
+  chp_area_id;
