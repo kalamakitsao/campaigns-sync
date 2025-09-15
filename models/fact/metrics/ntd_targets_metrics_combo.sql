@@ -5,14 +5,9 @@
     materialized = 'table',
     unique_key = ['chp_area_id', 'cycle_name'],
     on_schema_change = 'append_new_columns',
-    tags = ['ntd', 'campaigns'],
-    indexes = [
-      {'columns': ['chp_area_id']},
-      {'columns': ['cycle_name']}
-    ]
+    tags = ['ntd', 'campaigns']
 ) }}
 
--- 1) Scope cycles (optionally to one cycle)
 with campaign_cycles as (
   select
     d.cycle_name,
@@ -20,40 +15,27 @@ with campaign_cycles as (
     d.end_date::date   as end_date,
     unnest(d.target_counties) as target_county
   from {{ ref('ntd_campaign_dates') }} d
-  {% if var('ntd_cycle', none) %}
-    where d.cycle_name = {{ var('ntd_cycle') | tojson }}
-  {% endif %}
 ),
 
--- 2) Scope base tables (optionally to the same cycle for alignment/speed)
 metrics_base as (
   select *
   from {{ ref('ntd_campaign_metrics') }}
-  {% if var('ntd_cycle', none) %}
-    where cycle_name = {{ var('ntd_cycle') | tojson }}
-  {% endif %}
 ),
 
 targets_base as (
   select *
   from {{ ref('ntd_campaign_targets') }}
-  {% if var('ntd_cycle', none) %}
-    where cycle_name = {{ var('ntd_cycle') | tojson }}
-  {% endif %}
 ),
 
--- 3) Services / reach aggregated to (chp_area_id, cycle_name)
 campaign_reach as (
   select
     chp_area_id,
     cycle_name,
 
-    -- Tablet counts (issued during service)
     sum(coalesce(count_praziquantel_tablets_given, 0))::bigint as count_praziquantel_tablets_given,
     sum(coalesce(count_mebendazole_tablets_given, 0))::bigint  as count_mebendazole_tablets_given,
     sum(coalesce(count_albendazole_tablets_given, 0))::bigint  as count_albendazole_tablets_given,
 
-    -- Mebendazole reach (age/sex bands)
     sum(coalesce(count_total_1years_to_4years_male_treated_with_mebe, 0))::bigint    as count_total_1years_to_4years_male_treated_with_mebe,
     sum(coalesce(count_total_1years_to_4years_female_treated_with_mebe, 0))::bigint  as count_total_1years_to_4years_female_treated_with_mebe,
     sum(coalesce(count_total_5years_to_15years_male_treated_with_mebe, 0))::bigint   as count_total_5years_to_15years_male_treated_with_mebe,
@@ -61,7 +43,6 @@ campaign_reach as (
     sum(coalesce(count_total_15_plus_years_female_treated_with_mebe, 0))::bigint     as count_total_15_plus_years_female_treated_with_mebe,
     sum(coalesce(count_total_15_plus_years_male_treated_with_mebe, 0))::bigint       as count_total_15_plus_years_male_treated_with_mebe,
 
-    -- Albendazole reach (age/sex bands)
     sum(coalesce(count_total_1years_to_4years_female_treated_with_albe, 0))::bigint  as count_total_1years_to_4years_female_treated_with_albe,
     sum(coalesce(count_total_1years_to_4years_male_treated_with_albe, 0))::bigint    as count_total_1years_to_4years_male_treated_with_albe,
     sum(coalesce(count_total_5years_to_15years_male_treated_with_albe, 0))::bigint   as count_total_5years_to_15years_male_treated_with_albe,
@@ -69,7 +50,6 @@ campaign_reach as (
     sum(coalesce(count_total_15_plus_years_female_treated_with_albe, 0))::bigint     as count_total_15_plus_years_female_treated_with_albe,
     sum(coalesce(count_total_15_plus_years_male_treated_with_albe, 0))::bigint       as count_total_15_plus_years_male_treated_with_albe,
 
-    -- Praziquantel reach (age/sex bands)
     sum(coalesce(count_total_2years_to_4years_male_treated_with_prazi, 0))::bigint    as count_total_2years_to_4years_male_treated_with_prazi,
     sum(coalesce(count_total_2years_to_4years_female_treated_with_prazi, 0))::bigint  as count_total_2years_to_4years_female_treated_with_prazi,
     sum(coalesce(count_total_5years_to_14years_male_treated_with_prazi, 0))::bigint   as count_total_5years_to_14years_male_treated_with_prazi,
@@ -77,21 +57,18 @@ campaign_reach as (
     sum(coalesce(count_total_15_plus_years_male_treated_with_prazi, 0))::bigint       as count_total_15_plus_years_male_treated_with_prazi,
     sum(coalesce(count_total_15_plus_years_female_treated_with_prazi, 0))::bigint     as count_total_15_plus_years_female_treated_with_prazi,
 
-    -- Totals by drug
     sum(coalesce(count_total_treated_with_mebe, 0))::bigint  as count_total_treated_with_mebe,
     sum(coalesce(count_total_treated_with_albe, 0))::bigint  as count_total_treated_with_albe,
-    -- If your metrics use `count_total_treated_with_prazi`, rename accordingly:
     sum(coalesce(count_total_with_prazi, 0))::bigint         as count_total_with_prazi
   from metrics_base
   group by 1,2
 ),
 
--- 4) Commodities received aggregated to (chp_area_id, cycle_name)
 commodities_base as (
   select
     mv.chp_area_id,
     cc.cycle_name,
-    -- Received stock (sum across receipts within the cycle window)
+
     sum(coalesce(nc.rs_mebendazole, 0))::bigint   as rs_mebendazole_received,
     sum(coalesce(nc.rs_albendazole, 0))::bigint   as rs_albendazole_received,
     sum(coalesce(nc.rs_praziquantel, 0))::bigint  as rs_praziquantel_received
@@ -100,15 +77,13 @@ commodities_base as (
     on nc.reported_by_parent = mv.chp_area_id
   join campaign_cycles cc
     on lower(mv.county) = lower(cc.target_county)
-   and nc.reported::date between cc.start_date and cc.end_date   -- map receipt to the cycle
+   and nc.reported::date between cc.start_date and cc.end_date 
   group by 1,2
 )
 
--- 5) Final comparison table: targets + reach (services) + commodities
 select
   nt.*,
 
-  -- Services / reach
   coalesce(cr.count_praziquantel_tablets_given, 0) as count_praziquantel_tablets_given,
   coalesce(cr.count_mebendazole_tablets_given, 0)  as count_mebendazole_tablets_given,
   coalesce(cr.count_albendazole_tablets_given, 0)  as count_albendazole_tablets_given,
@@ -138,7 +113,6 @@ select
   coalesce(cr.count_total_treated_with_albe, 0) as count_total_treated_with_albe,
   coalesce(cr.count_total_with_prazi, 0)        as count_total_with_prazi,
 
-  -- Commodities received
   coalesce(cb.rs_mebendazole_received, 0)  as rs_mebendazole_received,
   coalesce(cb.rs_albendazole_received, 0)  as rs_albendazole_received,
   coalesce(cb.rs_praziquantel_received, 0) as rs_praziquantel_received
