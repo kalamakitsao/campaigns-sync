@@ -16,13 +16,13 @@ SELECT
     '2024_01' as cycle_name,
     '2024-12-11'::date as start_date,
     '2025-02-10'::date as end_date,
+    null as target_date,
     ARRAY['Kakamega'] as target_counties
-
 UNION ALL
-
 SELECT 
     'NTD' as campaign_name,
     '2025_01' as cycle_name,
     '2025-06-01'::date as start_date,
-    '2025-09-30'::date as end_date,
+    '2025-12-31'::date as end_date,
+    '2025-09-12' as target_date,
     ARRAY['Kakamega','Siaya','Bungoma','Transnzoia','Vihiga County'] as target_counties
