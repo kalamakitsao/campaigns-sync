@@ -1,13 +1,8 @@
 -- models/campaigns/ntd_commodities_by_cycle.sql
 {{ config(
     materialized = 'table',
-    tags = ['ntd', 'commodities', 'campaigns'],
-    indexes = [
-      {'columns': ['cycle_name']},
-      {'columns': ['chp_area_id']},
-      {'columns': ['county']},
-      {'columns': ['sub_county']}
-    ]
+    unique_key = ['cycle_name', 'chp_area_id'],
+    tags = ['ntd', 'commodities', 'campaigns']
 ) }}
 
 WITH campaign_counties AS (
