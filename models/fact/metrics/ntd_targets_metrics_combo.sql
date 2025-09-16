@@ -124,4 +124,3 @@ left join campaign_reach cr
 left join commodities_base cb
        on nt.chp_area_id = cb.chp_area_id
       and nt.cycle_name  = cb.cycle_name
-;

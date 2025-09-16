@@ -1,4 +1,4 @@
--- models/campaigns/ntd_commodities_by_cycle.sql
+-- models/campaigns/ntd_campaign_metrics_commodities_recieved.sql
 {{ config(
     materialized = 'table',
     unique_key = ['cycle_name', 'chp_area_id'],
@@ -48,4 +48,4 @@ GROUP BY
   county,
   sub_county,
   community_unit,
-  chp_area_id;
+  chp_area_id
