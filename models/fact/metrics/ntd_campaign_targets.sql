@@ -1,6 +1,6 @@
 -- models/campaigns/ntd_population_by_age_buckets.sql
 {{ config(
-    materialized = 'table',
+    materialized = 'incremental',
     unique_key = ['chp_area_id', 'cycle_name'],
     tags = ['ntd', 'population']
 ) }}
