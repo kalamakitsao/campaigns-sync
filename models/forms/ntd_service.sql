@@ -1,31 +1,35 @@
 -- ntd_service form model
-
 {%- set age_indexes = patient_age_indexes() -%}
 
 {% set custom_fields %}
   {{ patient_age_columns() }},
 
   NULLIF(couchdb.doc->'fields'->>'patient_id','')                                        AS patient_id,
-  TRIM(NULLIF(couchdb.doc->'fields'->>'patient_name',''))                                AS patient_name,
-  COALESCE(
-    NULLIF(couchdb.doc->'fields'->>'patient_gender',''),
-    NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->>'sex','')
-  )                                                                                      AS sex,
-  COALESCE(
-    NULLIF(couchdb.doc->'fields'->>'patient_date_of_birth',''),
-    NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->>'date_of_birth','')
-  )                                                                                      AS patient_date_of_birth,
-  NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->'parent'->'parent'->'contact'->>'chu_code','')           AS chu_code,
-  NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->'parent'->'parent'->'contact'->>'chu_name','')           AS chu_name,
-  NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->'parent'->'parent'->'contact'->>'link_facility_code','') AS link_facility_code,
-  NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->'parent'->'parent'->'contact'->>'link_facility_name','') AS link_facility_name,
-
-  NULLIF(couchdb.doc->'fields'->>'lf_symptoms','')::boolean                                 AS lf_symptoms,
-  NULLIF(couchdb.doc->'fields'->>'schisto_symptoms','')::boolean                            AS schisto_symptoms,
-  NULLIF(couchdb.doc->'fields'->>'snake_bite_symptoms','')::boolean                         AS snake_bite_symptoms,
-  NULLIF(couchdb.doc->'fields'->>'symptoms_referral','')::boolean                           AS symptoms_referral,
-  NULLIF(couchdb.doc->'fields'->>'needs_signoff','')::boolean                               AS needs_signoff,
-
+  COALESCE(NULLIF(couchdb.doc->'fields'->>'patient_gender',''), NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->>'sex','')) AS sex,
+  COALESCE(NULLIF(couchdb.doc->'fields'->>'patient_date_of_birth',''), NULLIF(couchdb.doc->'fields'->'inputs'->'contact'->>'date_of_birth','')) AS patient_date_of_birth,
+  NULLIF(couchdb.doc->'fields'->>'county_id','')                                         AS county_id,
+  COALESCE(NULLIF(couchdb.doc->'fields'->>'chw_area_id',''), NULLIF(couchdb.doc->'fields'->>'chp_area_id','')) AS chp_area_id_form,
+  NULLIF(couchdb.doc->'fields'->>'over_one','')                                          AS over_one,
+  NULLIF(couchdb.doc->'fields'->>'over_ten','')                                          AS over_ten,
+  NULLIF(couchdb.doc->'fields'->>'over_eighteen','')                                     AS over_eighteen,
+  NULLIF(couchdb.doc->'fields'->>'needs_signoff','')::boolean                            AS needs_signoff,
+  NULLIF(couchdb.doc->'fields'->>'symptoms_referral','')::boolean                        AS symptoms_referral,
+  NULLIF(couchdb.doc->'fields'->>'snake_bite_referral','')::boolean                      AS snake_bite_referral,
+  NULLIF(couchdb.doc->'fields'->>'snake_bite_symptoms','')::boolean                      AS snake_bite_symptoms,
+  NULLIF(couchdb.doc->'fields'->>'lf_symptoms','')::boolean                              AS lf_symptoms,
+  NULLIF(couchdb.doc->'fields'->>'has_hydrocele_symptoms','')::boolean                   AS has_hydrocele_symptoms,
+  NULLIF(couchdb.doc->'fields'->>'swollen_breasts_symptoms','')::boolean                 AS swollen_breasts_symptoms,
+  NULLIF(couchdb.doc->'fields'->>'has_cl_symptoms','')::boolean                          AS has_cl_symptoms,
+  NULLIF(couchdb.doc->'fields'->>'has_vl_symptoms','')::boolean                          AS has_vl_symptoms,
+  NULLIF(couchdb.doc->'fields'->>'schisto_symptoms','')::boolean                         AS schisto_symptoms,
+  NULLIF(couchdb.doc->'fields'->>'marked_pregnant','')::boolean                          AS marked_pregnant,
+  NULLIF(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_lf','')                  AS ntd_symptoms_lf,
+  NULLIF(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_hydrocele','')           AS ntd_symptoms_hydrocele,
+  NULLIF(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_sch','')                 AS ntd_symptoms_sch,
+  NULLIF(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_cut_leish','')           AS ntd_symptoms_cut_leish,
+  NULLIF(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_vite_leish','')          AS ntd_symptoms_vite_leish,
+  NULLIF(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_snakebite','')           AS ntd_symptoms_snakebite,
+  NULLIF(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_trichiasis','')          AS ntd_symptoms_trichiasis,
   ((' ' || COALESCE(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_lf','') || ' ') LIKE '% swelling_of_one_or_both_legs %')::boolean     AS lf_swelling_of_one_or_both_legs,
   ((' ' || COALESCE(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_lf','') || ' ') LIKE '% swelling_of_one_or_both_arms %')::boolean     AS lf_swelling_of_one_or_both_arms,
   ((' ' || COALESCE(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_lf','') || ' ') LIKE '% swelling_of_one_or_both_breasts %')::boolean  AS lf_swelling_of_one_or_both_breasts,
@@ -69,10 +73,14 @@
   ((' ' || COALESCE(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_trichiasis','') || ' ') LIKE '% redness_of_the_eye %')::boolean            AS trich_redness_of_the_eye,
   ((' ' || COALESCE(couchdb.doc->'fields'->'ntd_screening'->>'ntd_symptoms_trichiasis','') || ' ') LIKE '% none %')::boolean                          AS trich_none,
 
-  TRIM(NULLIF(couchdb.doc->>'from',''))                                                           AS reporter_phone,
-  (couchdb.doc->'geolocation'->>'latitude')::float8                                               AS latitude,
-  (couchdb.doc->'geolocation'->>'longitude')::float8                                              AS longitude,
-  (couchdb.doc->'geolocation'->>'accuracy')::float8                                               AS geo_accuracy_m
+  TRIM(NULLIF(couchdb.doc->'fields'->'inputs'->>'source',''))                                       AS input_source,
+  NULLIF(couchdb.doc->'fields'->'inputs'->>'source_id','')                                          AS input_source_id,
+  NULLIF(couchdb.doc->'fields'->'meta'->>'instanceID','')                                           AS instance_id,
+
+  TRIM(NULLIF(couchdb.doc->>'from',''))                                                             AS reporter_phone,
+  (couchdb.doc->'geolocation'->>'latitude')::float8                                                 AS latitude,
+  (couchdb.doc->'geolocation'->>'longitude')::float8                                                AS longitude,
+  (couchdb.doc->'geolocation'->>'accuracy')::float8                                                 AS geo_accuracy_m
 {% endset %}
 
 {{ cht_form_model('ntd_service', custom_fields, age_indexes) }}
