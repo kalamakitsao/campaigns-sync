@@ -24,5 +24,5 @@ SELECT
     '2025_01' as cycle_name,
     '2025-06-01'::date as start_date,
     '2025-12-31'::date as end_date,
-    '2025-09-12' as target_date,
-    ARRAY['Kakamega','Siaya','Bungoma','Transnzoia','Vihiga County'] as target_counties
+    '2025-10-01' as target_date,
+    ARRAY['Kakamega','Siaya','Bungoma','Transnzoia','Vihiga County', 'Kilifi'] as target_counties
