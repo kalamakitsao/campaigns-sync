@@ -1,7 +1,7 @@
 {{ config(
     materialized = 'table',
     tags = ['smc', 'campaign', 'summary'],
-    description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts',
+    description = 'SMC campaign summary with targets, reach, treatment compliance, and per-child cycle counts (long by cycle buckets)',
     indexes = [
         {'columns': ['county_name']},
         {'columns': ['sub_county_name']},
@@ -77,26 +77,40 @@ campaigns_summary AS (
 
 child_cycle_counts AS (
   SELECT
+    cj.county_name,
+    cj.sub_county_name,
+    cj.community_health_unit_name,
     cj.patient_id,
     COUNT(DISTINCT cj.cycle_name) AS cycle_count
   FROM campaigns_joined cj
   WHERE cj.smc_treatment_given = 'yes'
-  GROUP BY cj.patient_id
+  GROUP BY cj.county_name, cj.sub_county_name, cj.community_health_unit_name, cj.patient_id
 ),
 
 cycle_distribution AS (
   SELECT
-    cj.county_name,
-    cj.sub_county_name,
-    cj.community_health_unit_name,
-    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 1 THEN cj.patient_id END) AS cycles_1,
-    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 2 THEN cj.patient_id END) AS cycles_2,
-    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 3 THEN cj.patient_id END) AS cycles_3,
-    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 4 THEN cj.patient_id END) AS cycles_4,
-    COUNT(DISTINCT CASE WHEN ccc.cycle_count >= 5 THEN cj.patient_id END) AS cycles_5_or_more
+    ccc.county_name,
+    ccc.sub_county_name,
+    ccc.community_health_unit_name,
+    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 1 THEN ccc.patient_id END) AS cycles_1,
+    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 2 THEN ccc.patient_id END) AS cycles_2,
+    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 3 THEN ccc.patient_id END) AS cycles_3,
+    COUNT(DISTINCT CASE WHEN ccc.cycle_count = 4 THEN ccc.patient_id END) AS cycles_4,
+    COUNT(DISTINCT CASE WHEN ccc.cycle_count >= 5 THEN ccc.patient_id END) AS cycles_5
   FROM child_cycle_counts ccc
-  JOIN campaigns_joined cj ON cj.patient_id = ccc.patient_id
-  GROUP BY cj.county_name, cj.sub_county_name, cj.community_health_unit_name
+  GROUP BY ccc.county_name, ccc.sub_county_name, ccc.community_health_unit_name
+),
+
+cycle_distribution_long AS (
+  SELECT county_name, sub_county_name, community_health_unit_name, '1'         AS cycle_bucket, cycles_1        ::bigint AS children_in_bucket FROM cycle_distribution
+  UNION ALL
+  SELECT county_name, sub_county_name, community_health_unit_name, '2'         AS cycle_bucket, cycles_2        ::bigint AS children_in_bucket FROM cycle_distribution
+  UNION ALL
+  SELECT county_name, sub_county_name, community_health_unit_name, '3'         AS cycle_bucket, cycles_3        ::bigint AS children_in_bucket FROM cycle_distribution
+  UNION ALL
+  SELECT county_name, sub_county_name, community_health_unit_name, '4'         AS cycle_bucket, cycles_4        ::bigint AS children_in_bucket FROM cycle_distribution
+  UNION ALL
+  SELECT county_name, sub_county_name, community_health_unit_name, '5'         AS cycle_bucket, cycles_5        ::bigint AS children_in_bucket FROM cycle_distribution
 )
 
 SELECT
@@ -106,15 +120,23 @@ SELECT
   t.target_children,
   s.children_reached,
   s.children_treated,
-  d.cycles_1,
-  d.cycles_2,
-  d.cycles_3,
-  d.cycles_4,
-  d.cycles_5_or_more
+  d.cycle_bucket,
+  d.children_in_bucket  
 FROM campaign_targets t
 LEFT JOIN campaigns_summary s
-  ON t.sub_county_name = s.sub_county_name
-  AND t.community_health_unit_name = s.community_health_unit_name
-LEFT JOIN cycle_distribution d
-  ON t.sub_county_name = d.sub_county_name
-  AND t.community_health_unit_name = d.community_health_unit_name
+  ON t.county_name = s.county_name
+ AND t.sub_county_name = s.sub_county_name
+ AND t.community_health_unit_name = s.community_health_unit_name
+LEFT JOIN cycle_distribution_long d
+  ON t.county_name = d.county_name
+ AND t.sub_county_name = d.sub_county_name
+ AND t.community_health_unit_name = d.community_health_unit_name
+ORDER BY
+  t.county_name, t.sub_county_name, t.community_health_unit_name,
+  CASE d.cycle_bucket
+    WHEN '1' THEN 1
+    WHEN '2' THEN 2
+    WHEN '3' THEN 3
+    WHEN '4' THEN 4
+    ELSE 5
+  END

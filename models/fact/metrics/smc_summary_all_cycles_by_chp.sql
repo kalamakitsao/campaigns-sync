@@ -44,6 +44,7 @@ target_counties AS (
   SELECT DISTINCT target_county FROM campaign_cycles
 ),
 
+-- Tag SMC forms with their cycle
 campaigns_with_cycle AS (
   SELECT
     c.*,
@@ -52,10 +53,25 @@ campaigns_with_cycle AS (
   FROM {{ ref('campaign_service_smc') }} c
   JOIN campaign_cycles cd 
     ON c.reported::date BETWEEN cd.start_date AND cd.end_date
+  -- {% if is_incremental() %}
+  --   WHERE c.saved_timestamp >= (SELECT COALESCE(MAX(saved_timestamp), '1900-01-01') FROM {{ this }})
+  -- {% endif %}
+),
 
- -- {% if is_incremental() %}
- --   WHERE c.saved_timestamp >= (SELECT MAX(saved_timestamp) FROM {{ this }})
- -- {% endif %}
+-- Keep only the LATEST form per (cycle_name, patient_id)
+latest_cwc AS (
+  SELECT *
+  FROM (
+    SELECT
+      cwc.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY cwc.cycle_name, cwc.patient_id
+        ORDER BY cwc.reported DESC, cwc.uuid DESC
+      ) AS rn
+    FROM campaigns_with_cycle cwc
+    WHERE cwc.patient_id IS NOT NULL
+  ) t
+  WHERE rn = 1
 ),
 
 chp_hierarchy AS (
@@ -82,7 +98,7 @@ campaigns AS (
     cwc.redose,
     COALESCE(cwc.calc_pink_spaq::int, 0)  AS pink_spaq,
     COALESCE(cwc.calc_green_spaq::int, 0) AS green_spaq
-  FROM campaigns_with_cycle cwc
+  FROM latest_cwc cwc
   JOIN {{ ref('patient_f_client') }} p ON p.uuid = cwc.patient_id
   JOIN {{ ref('household') }} hh ON p.household_id = hh.uuid
   JOIN chp_hierarchy chp ON hh.chv_area_id = chp.chp_area_id
@@ -96,9 +112,10 @@ SELECT
   c.chp_area_id,
   c.cycle,
   COALESCE(t.target_children, 0) AS target_children,
-  COUNT(DISTINCT c.patient_id) AS children_reached,
+  -- After dedupe, COUNT(patient_id) is equivalent to COUNT(DISTINCT patient_id)
+  COUNT(c.patient_id) AS children_reached,
   SUM(CASE WHEN smc_treatment_given = 'yes' THEN 1 ELSE 0 END) AS children_treated,
-  SUM(CASE WHEN smc_treatment_given = 'no' THEN 1 ELSE 0 END) AS children_excluded,
+  SUM(CASE WHEN smc_treatment_given = 'no'  THEN 1 ELSE 0 END) AS children_excluded,
   SUM(CASE WHEN redose = 'yes' THEN 1 ELSE 0 END) AS children_redosed,
   SUM(pink_spaq)  AS pink_spaq_issued,
   SUM(green_spaq) AS green_spaq_issued
@@ -116,4 +133,4 @@ GROUP BY
 ORDER BY
   c.county_name,
   c.sub_county_name,
-  c.community_health_unit_name
+  c.community_health_unit_name;
