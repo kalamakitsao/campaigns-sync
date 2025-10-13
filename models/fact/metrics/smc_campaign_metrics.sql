@@ -1,5 +1,5 @@
 {{ config(
-    materialized = 'incremental',
+    materialized = 'table',
     unique_key = ['chp_area_name', 'campaign_date', 'cycle'],
     on_schema_change = 'append_new_columns',
     tags = ['smc', 'campaigns']
