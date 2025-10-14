@@ -133,4 +133,4 @@ GROUP BY
 ORDER BY
   c.county_name,
   c.sub_county_name,
-  c.community_health_unit_name;
+  c.community_health_unit_name
